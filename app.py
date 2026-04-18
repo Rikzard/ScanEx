@@ -71,27 +71,56 @@ def analyze_route():
     return jsonify(result)
 
 # -----------------------------
-# Analyze by Semester (No Upload Required)
+# Analyze by Semester and Subject
 # -----------------------------
 @app.route("/analyze_semester", methods=["POST"])
 def analyze_semester():
     import glob
-    data = request.json
-    semester = data.get("semester")
-    syllabus = data.get("syllabus")
+    semester = request.form.get("semester")
+    subject = request.form.get("subject")
+    
+    if "syllabus" not in request.files:
+        return jsonify({"error": "Missing syllabus file"}), 400
+    
+    syllabus_file = request.files["syllabus"]
+    
+    if not semester or not subject:
+        return jsonify({"error": "Missing semester or subject"}), 400
 
-    if not semester or not syllabus:
-        return jsonify({"error": "Missing semester or syllabus"}), 400
-
-    target_dir = os.path.join(app.config["UPLOAD_FOLDER"], semester)
+    # Parse the uploaded Syllabus File via OCR to get syllabus text
+    syllabus_path = os.path.join(app.config["UPLOAD_FOLDER"], f"temp_{syllabus_file.filename}")
+    syllabus_file.save(syllabus_path)
+    
+    syllabus_text = ""
+    try:
+        if syllabus_path.lower().endswith('.pdf'):
+            syl_images = convert_from_path(syllabus_path, poppler_path=r"C:\poppler\Library\bin")
+            for img in syl_images:
+                syllabus_text += pytesseract.image_to_string(img) + "\n"
+        else:
+            syl_img = Image.open(syllabus_path)
+            syllabus_text += pytesseract.image_to_string(syl_img)
+    except Exception as e:
+        print(f"Error processing syllabus: {e}")
+        return jsonify({"error": "Failed to parse syllabus file."}), 500
+    finally:
+        if os.path.exists(syllabus_path):
+            os.remove(syllabus_path)
+            
+    target_dir = os.path.join(app.config["UPLOAD_FOLDER"], semester, subject.strip().lower())
     
     if not os.path.isdir(target_dir):
-        return jsonify({"error": f"Folder for {semester} not found on server."}), 404
+        # Fallback raw check for folder lookup
+        alt_target = os.path.join(app.config["UPLOAD_FOLDER"], semester, subject.strip())
+        if os.path.isdir(alt_target):
+            target_dir = alt_target
+        else:
+            return jsonify({"error": f"Folder for {subject} not found in {semester}."}), 404
 
     pdf_files = glob.glob(os.path.join(target_dir, "*.pdf"))
 
     if not pdf_files:
-        return jsonify({"error": f"No question papers found for {semester}."}), 404
+        return jsonify({"error": f"No question papers found for {subject} in {semester}."}), 404
 
     aggregated_text = ""
 
@@ -109,7 +138,7 @@ def analyze_semester():
     if not aggregated_text.strip():
         return jsonify({"error": "Failed to extract text from papers."}), 500
 
-    result = analyze(aggregated_text, syllabus)
+    result = analyze(aggregated_text, syllabus_text)
     return jsonify(result)
 
 

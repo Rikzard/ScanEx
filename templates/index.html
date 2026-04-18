@@ -44,8 +44,19 @@
             </div>
 
             <div class="input-group">
-                <label>Enter Syllabus (one topic per line)</label>
-                <textarea id="syllabus" class="custom-textarea" placeholder="e.g.&#10;DBMS Normalization&#10;ER Diagrams&#10;Indexing"></textarea>
+                <label>Subject</label>
+                <div class="custom-select-wrapper">
+                    <select id="subject" class="custom-select">
+                        <!-- Populated via Javascript -->
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Upload Syllabus (PDF or Image)</label>
+                <div class="custom-file-upload">
+                    <input type="file" id="syllabusFile" class="file-input" accept=".pdf, image/*">
+                </div>
             </div>
 
             <button class="btn btn-peaceful" id="analyzeBtn" onclick="window.analyzePYQ ? analyzePYQ() : null">

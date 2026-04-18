@@ -1,3 +1,14 @@
+const subjectMap = {
+    "semester_1": ["Physics Dummy", "Maths Dummy", "Chemistry Dummy"],
+    "semester_2": ["BEE Dummy", "Mechanics Dummy", "Graphics Dummy"],
+    "semester_3": ["Maths", "DBMS", "DS", "COA", "DSGT"],
+    "semester_4": ["Maths", "AOA", "CTD", "MDM", "OS"],
+    "semester_5": ["TCS Dummy", "SE Dummy", "CN Dummy"],
+    "semester_6": ["SPCC Dummy", "CSS Dummy", "AI Dummy"],
+    "semester_7": ["DSIP Dummy", "MCC Dummy"],
+    "semester_8": ["HMI Dummy", "DC Dummy"]
+};
+
 document.addEventListener("DOMContentLoaded", () => {
     const savedTheme = localStorage.getItem('theme');
     const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -9,6 +20,28 @@ document.addEventListener("DOMContentLoaded", () => {
     
     document.documentElement.setAttribute('data-theme', currentTheme);
     updateThemeIcon(currentTheme);
+
+    const semesterSelect = document.getElementById("semester");
+    const subjectSelect = document.getElementById("subject");
+
+    function populateSubjects() {
+        if (!semesterSelect || !subjectSelect) return;
+        const selectedSem = semesterSelect.value;
+        const subjects = subjectMap[selectedSem] || ["Dummy Subject"];
+        
+        subjectSelect.innerHTML = "";
+        subjects.forEach(sub => {
+            const opt = document.createElement("option");
+            opt.value = sub; 
+            opt.textContent = sub;
+            subjectSelect.appendChild(opt);
+        });
+    }
+
+    if (semesterSelect) {
+        semesterSelect.addEventListener("change", populateSubjects);
+        populateSubjects();
+    }
 });
 
 function toggleTheme() {
@@ -30,11 +63,17 @@ function updateThemeIcon(theme) {
 
 async function analyzePYQ() {
     const semester = document.getElementById("semester").value;
-    const syllabus = document.getElementById("syllabus").value;
+    const subject = document.getElementById("subject").value;
+    const syllabusFile = document.getElementById("syllabusFile").files[0];
     const btn = document.getElementById("analyzeBtn");
 
-    if (!syllabus.trim()) {
-        alert("Please enter syllabus topics.");
+    if (!subject.trim()) {
+        alert("Please enter a subject name.");
+        return;
+    }
+
+    if (!syllabusFile) {
+        alert("Please upload your syllabus file.");
         return;
     }
 
@@ -42,15 +81,14 @@ async function analyzePYQ() {
         btn.classList.add("loading");
         btn.disabled = true;
         
+        let formData = new FormData();
+        formData.append("semester", semester);
+        formData.append("subject", subject);
+        formData.append("syllabus", syllabusFile);
+
         let analyzeResponse = await fetch("/analyze_semester", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                semester: semester,
-                syllabus: syllabus
-            })
+            body: formData
         });
 
         let result = await analyzeResponse.json();
