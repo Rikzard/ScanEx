@@ -41,20 +41,91 @@ def extract_pdf():
     return jsonify({"text": text})
 
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from utils.excel_manager import excel_manager
+import json
+from flask import send_file
+
 # -----------------------------
-# Extract text from image
+# Extract Marks from Answer Sheet
 # -----------------------------
 @app.route("/extract_image", methods=["POST"])
 def extract_image():
-    file = request.files["image"]
+    file = request.files.get("image")
+    if not file:
+        return jsonify({"error": "No image uploaded"}), 400
+
     path = os.path.join(app.config["UPLOAD_FOLDER"], file.filename)
     file.save(path)
 
-    img = Image.open(path)
-    text = pytesseract.image_to_string(img)
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return jsonify({"error": "GEMINI_API_KEY is not set in the .env file."}), 500
 
-    return jsonify({"text": text})
+    try:
+        from google import genai
+        client = genai.Client(api_key=api_key)
+        
+        myfile = client.files.upload(file=path)
+        
+        prompt = """
+        You are an advanced data extraction assistant.
+        Your task is to perfectly copy the contents of the main table or grid from the provided image into a structured 2D array.
+        
+        Guidelines:
+        1. Parse the table EXACTLY as it appears in the image (rows and columns). Keep the headers intact.
+        2. Output ONLY a valid JSON List of Lists (a 2D array) representing the table, where the first internal list contains the headers, and the subsequent lists contain the row data.
+        3. Do NOT return markdown blocks (like ```json), no conversational text, no explanations, just the raw JSON array.
+        Example: [["Header 1", "Header 2"], ["Row 1 Col 1", "Row 1 Col 2"]]
+        """
+        
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=[myfile, prompt],
+        )
 
+        # Parse JSON robustly
+        import re
+        raw_text = response.text
+        
+        try:
+            # Extract JSON array using regex if there's surrounding text
+            json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
+            if json_match:
+                clean_text = json_match.group(0)
+            else:
+                clean_text = raw_text.replace("```json", "").replace("```", "").strip()
+                
+            table_data = json.loads(clean_text)
+        except json.JSONDecodeError:
+            print("Failed to parse JSON")
+            print("Raw Output from Gemini:", response.text)
+            return jsonify({"error": "Failed to parse JSON from AI", "raw_output": response.text}), 500
+
+        # Build Excel Database
+        excel_manager.append_data(file.filename, table_data)
+
+        return jsonify({"success": True, "extracted_data": table_data})
+
+    except Exception as e:
+        print(f"Error during API or Excel operation: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if os.path.exists(path):
+            os.remove(path)
+
+
+# -----------------------------
+# Download Active Excel Sheet
+# -----------------------------
+@app.route("/download_excel", methods=["GET"])
+def download_excel():
+    excel_path = os.path.abspath("data/student_marks.xlsx")
+    if os.path.exists(excel_path):
+        return send_file(excel_path, as_attachment=True)
+    return jsonify({"error": "No marks have been scanned yet."}), 404
 
 # -----------------------------
 # Analyze text

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Academic Assistant</title>
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -60,7 +60,7 @@
             </div>
 
             <button class="btn btn-peaceful" id="analyzeBtn" onclick="window.analyzePYQ ? analyzePYQ() : null">
-                <span class="btn-text">Predict Questions</span>
+                <span class="btn-text">✨ Predict Questions</span>
                 <div class="loader" id="analyzeLoader"></div>
             </button>
 
@@ -70,11 +70,11 @@
             </div>
         </div>
 
-        <!-- OCR -->
+        <!-- Marks Tabulator -->
         <div class="card soothing-card">
             <div class="card-header">
-                <h2>📸 Notes Scanner</h2>
-                <p>Extract machine-readable text directly from your handwritten notes or images.</p>
+                <h2>📊 Marks Tabulator</h2>
+                <p>Upload a photo of an answer sheet. We extract section-wise marks instantly into an Excel spreadsheet.</p>
             </div>
             
             <div class="input-group">
@@ -84,13 +84,18 @@
                 </div>
             </div>
 
-            <button class="btn btn-peaceful-alt" id="scanBtn" onclick="window.scanImage ? scanImage() : null">
-                <span class="btn-text">Extract Text</span>
-                <div class="loader" id="scanLoader"></div>
-            </button>
+            <div style="display: flex; gap: 15px;">
+                <button class="btn btn-peaceful-alt" id="scanBtn" onclick="window.scanImage ? scanImage() : null">
+                    <span class="btn-text">📝 Extract to Excel</span>
+                    <div class="loader" id="scanLoader"></div>
+                </button>
+                <a href="/download_excel" class="btn" style="background-color: #64748B; text-decoration: none; text-align: center; max-width: 140px;">
+                    📥 Download
+                </a>
+            </div>
 
             <div class="result-section">
-                <h3>Extracted Text</h3>
+                <h3>Extracted Data</h3>
                 <div id="ocrResult" class="result-box"></div>
             </div>
         </div>
