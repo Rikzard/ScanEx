@@ -1,0 +1,23 @@
+# Environment Variables (Contains API Keys)
+.env
+.env.*
+
+# Uploaded Files (Reveals student exam scans and syllabuses)
+uploads/
+
+# Generated Data (Reveals extracted marks in Excel sheets)
+data/
+
+# Python Virtual Environments
+venv/
+env/
+
+# Python Caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# OS generated files
+.DS_Store
+Thumbs.db
