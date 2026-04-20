@@ -1,16 +1,10 @@
 import os
 import json
 import re
+from utils.gemini_client import call_gemini_with_retry
 
 def analyze(text, syllabus):
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        return {"error": "GEMINI_API_KEY is missing from environment. Please set it."}
-        
     try:
-        from google import genai
-        client = genai.Client(api_key=api_key)
-        
         prompt = """
         You are an intelligent Academic Analyzer. 
         You are given the Syllabus and raw OCR text from past Question Papers.
@@ -35,21 +29,8 @@ def analyze(text, syllabus):
         
         contents = f"SYLLABUS:\n{syllabus}\n\nQUESTION PAPERS:\n{text}\n\n{prompt}"
         
-        import time
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=contents,
-                )
-                break
-            except Exception as e:
-                if ("503" in str(e) or "429" in str(e) or "UNAVAILABLE" in str(e).upper()) and attempt < max_retries - 1:
-                    print(f"API busy (attempt {attempt + 1}), retrying in {2 ** attempt} seconds...")
-                    time.sleep(2 ** attempt)
-                else:
-                    raise e
+        # Use centralized utility with retry and text limiting
+        response = call_gemini_with_retry(contents, model_name='gemini-2.5-flash')
         
         raw_text = response.text
         

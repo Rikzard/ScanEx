@@ -2,11 +2,11 @@
 .env
 .env.*
 
-# Uploaded Files (Reveals student exam scans and syllabuses)
+# Uploaded Files (user data)
 uploads/
 
-# Generated Data (Reveals extracted marks in Excel sheets)
-data/
+# Generated Data (only Excel files)
+data/*.xlsx
 
 # Python Virtual Environments
 venv/

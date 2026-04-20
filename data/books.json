@@ -1,0 +1,44 @@
+{
+    "semester_1": {
+        "Physics Dummy": [
+            {
+                "title": "University Physics",
+                "author": "Young & Freedman",
+                "url": "/static/sample_book.pdf"
+            },
+            {
+                "title": "Concepts of Physics",
+                "author": "H.C. Verma",
+                "url": "/static/sample_book.pdf"
+            }
+        ],
+        "Maths Dummy": [
+            {
+                "title": "Higher Engineering Mathematics",
+                "author": "B.S. Grewal",
+                "url": "/static/sample_book.pdf"
+            }
+        ]
+    },
+    "semester_3": {
+        "DBMS": [
+            {
+                "title": "Fundamentals of Database Systems",
+                "author": "Navathe",
+                "url": "/static/sample_book.pdf"
+            },
+            {
+                "title": "DBMS Basics",
+                "author": "Bhumitkumar",
+                "url": "/static/sample_book.pdf"
+            }
+        ],
+        "DS": [
+            {
+                "title": "Data Structures using C",
+                "author": "Reema Thareja",
+                "url": "/static/sample_book.pdf"
+            }
+        ]
+    }
+}

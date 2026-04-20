@@ -10,17 +10,26 @@ const subjectMap = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    const savedTheme = localStorage.getItem('theme');
-    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
-    let currentTheme = savedTheme;
-    if (!currentTheme) {
-        currentTheme = systemDark ? 'dark' : 'light';
-    }
-    
-    document.documentElement.setAttribute('data-theme', currentTheme);
-    updateThemeIcon(currentTheme);
+    // Theme and Sidebar initialization
+    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
 
+    const savedSidebar = localStorage.getItem('sidebar-state');
+    if (savedSidebar === 'collapsed') {
+        const sidebar = document.getElementById('mainSidebar');
+        if (sidebar) sidebar.classList.add('collapsed');
+    }
+
+    // Initialize Dashboard Features
+    renderHeatmap();
+    animateChart();
+    
+    // Auto-populate logic for all views
+    initLibrary();
+    initMockTest();
+
+    // Subject Population logic
     const semesterSelect = document.getElementById("semester");
     const subjectSelect = document.getElementById("subject");
 
@@ -44,6 +53,249 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+function switchView(viewId) {
+    // Update Views
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+
+    // Update Sidebar
+    document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('onclick').includes(viewId)) {
+            btn.classList.add('active');
+        }
+    });
+
+    // Update Title
+    const titleMap = {
+        'dashboard-view': 'Dashboard Overview',
+        'pyq-view': 'PYQ Predictor',
+        'books-view': 'Reference Books',
+        'tabulator-view': 'Marks Tabulator'
+    };
+    document.getElementById('activeViewTitle').innerText = titleMap[viewId] || 'AcadeX';
+
+    if (viewId === 'books-view') loadLibrary();
+    if (viewId === 'mock-test-view') initMockTest();
+}
+
+// --- Sidebar Logic ---
+function toggleSidebar() {
+    const sidebar = document.getElementById('mainSidebar');
+    sidebar.classList.toggle('collapsed');
+    const state = sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded';
+    localStorage.setItem('sidebar-state', state);
+}
+
+// --- Library Logic ---
+
+function initLibrary() {
+    const libSem = document.getElementById("libSemester");
+    if (libSem) {
+        populateLibrarySubjects();
+        libSem.addEventListener("change", populateLibrarySubjects);
+    }
+}
+
+function populateLibrarySubjects() {
+    const sem = document.getElementById("libSemester").value;
+    const subSelect = document.getElementById("libSubject");
+    if (!subSelect) return;
+
+    const subjects = subjectMap[sem] || [];
+    subSelect.innerHTML = "";
+    subjects.forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub;
+        opt.textContent = sub;
+        subSelect.appendChild(opt);
+    });
+    loadLibrary(); // Load books for the first subject
+}
+
+async function loadLibrary() {
+    const sem = document.getElementById("libSemester").value;
+    const sub = document.getElementById("libSubject").value;
+    const shelf = document.getElementById("booksShelf");
+    if (!shelf) return;
+
+    shelf.innerHTML = '<div class="loader-small"></div>';
+
+    try {
+        const response = await fetch(`/api/books?semester=${sem}&subject=${sub}`);
+        const books = await response.json();
+
+        if (books.length === 0) {
+            shelf.innerHTML = '<p class="msg-empty">No reference books listed for this subject yet.</p>';
+            return;
+        }
+
+        shelf.innerHTML = books.map((book, index) => `
+            <div class="book-card fade-in" onclick="openBook('${book.url}')">
+                <div class="book-info">
+                    <div class="book-title">${book.title}</div>
+                    <div class="book-author">by ${book.author}</div>
+                </div>
+                <div class="book-badge">PDF</div>
+                <!-- Delete Button -->
+                ${document.querySelector('.btn-add-small') ? `
+                    <button class="btn-delete-book" onclick="event.stopPropagation(); deleteBook(${index})" title="Delete Book">×</button>
+                ` : ''}
+            </div>
+        `).join("");
+
+    } catch (e) {
+        shelf.innerHTML = '<p>Error loading books.</p>';
+    }
+}
+
+function openBook(url) {
+    if (!url) {
+        alert("No PDF available for this book.");
+        return;
+    }
+    window.open(url, '_blank');
+}
+
+async function addBook() {
+    const sem = document.getElementById("libSemester").value;
+    const sub = document.getElementById("libSubject").value;
+    const title = document.getElementById("newBookTitle").value;
+    const author = document.getElementById("newBookAuthor").value;
+
+    if (!title || !author) {
+        alert("Please fill in both title and author.");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/books/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ semester: sem, subject: sub, title, author })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            document.getElementById("newBookTitle").value = "";
+            document.getElementById("newBookAuthor").value = "";
+            document.getElementById("addBookForm").classList.add("hidden");
+            loadLibrary();
+        } else {
+            alert(result.error || "Failed to add book.");
+        }
+    } catch (e) {
+        alert("Error connecting to server.");
+    }
+}
+
+async function deleteBook(index) {
+    if (!confirm("Are you sure you want to delete this book?")) return;
+
+    const sem = document.getElementById("libSemester").value;
+    const sub = document.getElementById("libSubject").value;
+
+    try {
+        const response = await fetch('/api/books/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ semester: sem, subject: sub, index })
+        });
+        const result = await response.json();
+        
+        if (result.success) {
+            loadLibrary();
+        } else {
+            alert(result.error);
+        }
+    } catch (e) {
+        alert("Error connecting to server.");
+    }
+}
+
+// --- Mock Test Logic ---
+
+function initMockTest() {
+    const mockSem = document.getElementById("mockSemester");
+    if (mockSem) {
+        populateMockSubjects();
+        mockSem.addEventListener("change", populateMockSubjects);
+    }
+}
+
+function populateMockSubjects() {
+    const sem = document.getElementById("mockSemester").value;
+    const subSelect = document.getElementById("mockSubject");
+    if (!subSelect) return;
+
+    const subjects = subjectMap[sem] || [];
+    subSelect.innerHTML = "";
+    subjects.forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub;
+        opt.textContent = sub;
+        subSelect.appendChild(opt);
+    });
+}
+
+async function generateMockTest() {
+    const sub = document.getElementById("mockSubject").value;
+    const paperArea = document.getElementById("mockPaperArea");
+    const questionsList = document.getElementById("mockQuestionsList");
+    const displaySub = document.getElementById("displaySub");
+
+    try {
+        const response = await fetch(`/api/static_mock_test?subject=${sub}`);
+        const questions = await response.json();
+
+        displaySub.innerText = `Subject: ${sub}`;
+        questionsList.innerHTML = questions.map((q, i) => `
+            <div class="paper-question">
+                <span class="q-num">Q${i+1}.</span>
+                <span class="q-text">${q}</span>
+            </div>
+        `).join("");
+
+        paperArea.classList.remove("hidden");
+        // Scroll to paper
+        paperArea.scrollIntoView({ behavior: 'smooth' });
+
+    } catch (e) {
+        alert("Error generating mock test.");
+    }
+}
+
+function renderHeatmap() {
+    const container = document.getElementById('consistencyHeatmap');
+    if (!container) return;
+
+    container.innerHTML = '';
+    // Generate 60 mock days (roughly 2 months)
+    for (let i = 0; i < 60; i++) {
+        const intensity = Math.floor(Math.random() * 4); // 0 to 3
+        const cell = document.createElement('div');
+        cell.className = 'heatmap-cell';
+        cell.style.backgroundColor = `var(--heatmap-${intensity})`;
+        cell.title = `Activity Level: ${intensity}`;
+        container.appendChild(cell);
+    }
+}
+
+function animateChart() {
+    const path = document.querySelector('.chart-line');
+    if (!path) return;
+    
+    // Simple drawing animation
+    const length = path.getTotalLength();
+    path.style.strokeDasharray = length;
+    path.style.strokeDashoffset = length;
+    
+    setTimeout(() => {
+        path.style.transition = 'stroke-dashoffset 2s ease-in-out';
+        path.style.strokeDashoffset = '0';
+    }, 500);
+}
+
 function toggleTheme() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -57,7 +309,7 @@ function toggleTheme() {
 function updateThemeIcon(theme) {
     const btn = document.getElementById('themeToggleBtn');
     if (btn) {
-        btn.innerText = theme === 'dark' ? '☀️' : '🌙'; // If dark, show sun to toggle light. If light, show moon.
+        btn.innerText = theme === 'dark' ? '☀️' : '🌙';
     }
 }
 
