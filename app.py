@@ -28,7 +28,7 @@ from utils.excel_manager import excel_manager
 from utils.gemini_client import call_gemini_with_retry
 from utils import cache_manager
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='templates/static', static_url_path='/static')
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-acadex-key")
 
 # Hardcoded Users for Teacher and Student
