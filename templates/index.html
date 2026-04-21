@@ -206,10 +206,14 @@
                     </div>
 
                     <div id="addBookForm" class="add-book-panel hidden">
-                        <div class="form-row">
+                        <div class="form-row" style="display: flex; flex-direction: column; gap: 12px;">
                             <input type="text" id="newBookTitle" placeholder="Book Title" class="custom-input-small">
                             <input type="text" id="newBookAuthor" placeholder="Author" class="custom-input-small">
-                            <button class="btn-save-small" onclick="addBook()">Save</button>
+                            <div class="custom-file-upload">
+                                <label style="font-size: 0.75rem; color: var(--text-dim); margin-bottom: 4px; display: block;">Book PDF (Required)</label>
+                                <input type="file" id="newBookFile" accept=".pdf" class="file-input">
+                            </div>
+                            <button class="btn-save-small" onclick="addBook()" style="width: 100%;">Save Book</button>
                         </div>
                     </div>
                     {% endif %}

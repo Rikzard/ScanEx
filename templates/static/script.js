@@ -10,10 +10,10 @@ const subjectMap = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Theme and Sidebar initialization
-    const savedTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
+    // Always dark mode
+    document.documentElement.removeAttribute('data-theme');
+    const themeBtn = document.getElementById('themeToggleBtn');
+    if (themeBtn) themeBtn.style.display = 'none';
 
     const savedSidebar = localStorage.getItem('sidebar-state');
     if (savedSidebar === 'collapsed') {
@@ -165,23 +165,31 @@ async function addBook() {
     const sub = document.getElementById("libSubject").value;
     const title = document.getElementById("newBookTitle").value;
     const author = document.getElementById("newBookAuthor").value;
+    const file = document.getElementById("newBookFile").files[0];
 
-    if (!title || !author) {
-        alert("Please fill in both title and author.");
+    if (!title || !author || !file) {
+        alert("Please fill in all fields and select a PDF file.");
         return;
     }
+
+    const formData = new FormData();
+    formData.append("semester", sem);
+    formData.append("subject", sub);
+    formData.append("title", title);
+    formData.append("author", author);
+    formData.append("book_file", file);
 
     try {
         const response = await fetch('/api/books/add', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ semester: sem, subject: sub, title, author })
+            body: formData
         });
         const result = await response.json();
         
         if (result.success) {
             document.getElementById("newBookTitle").value = "";
             document.getElementById("newBookAuthor").value = "";
+            document.getElementById("newBookFile").value = "";
             document.getElementById("addBookForm").classList.add("hidden");
             loadLibrary();
         } else {
@@ -400,22 +408,8 @@ function animateChart() {
     }, 500);
 }
 
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    
-    updateThemeIcon(newTheme);
-}
-
-function updateThemeIcon(theme) {
-    const btn = document.getElementById('themeToggleBtn');
-    if (btn) {
-        btn.innerText = theme === 'dark' ? '☀️' : '🌙';
-    }
-}
+function toggleTheme() { /* dark mode always on */ }
+function updateThemeIcon(theme) { /* no-op */ }
 
 async function analyzePYQ() {
     const semester = document.getElementById("semester").value;

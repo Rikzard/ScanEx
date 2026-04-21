@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AcadeX — Smart Academic Management Platform</title>
+  <meta name="description" content="AcadeX automates academic workflows. Scan mark sheets into Excel, predict exam questions from past papers, manage student submissions — all in one platform.">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0a;
+      --bg-2:      #111111;
+      --bg-card:   #161616;
+      --border:    rgba(255,255,255,0.07);
+      --border-hi: rgba(255,255,255,0.12);
+      --green:     #22c55e;
+      --green-dim: #16a34a;
+      --green-glow:rgba(34,197,94,0.15);
+      --text:      #f1f5f9;
+      --text-dim:  #94a3b8;
+      --text-mute: #475569;
+      --radius:    16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─── NAV ─────────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      height: 64px;
+      background: rgba(10,10,10,0.8);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.35rem; font-weight: 800; letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #fff 50%, var(--green));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .nav-brand .brand-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      -webkit-text-fill-color: initial;
+    }
+
+    .nav-links { display: flex; gap: 32px; }
+    .nav-links a {
+      color: var(--text-dim); text-decoration: none;
+      font-size: 0.9rem; font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      display: flex; gap: 12px; align-items: center;
+    }
+
+    .btn-ghost {
+      padding: 9px 20px; border-radius: 10px;
+      border: 1px solid var(--border-hi);
+      background: transparent; color: var(--text);
+      font-size: 0.875rem; font-weight: 600;
+      text-decoration: none; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.2); }
+
+    .btn-primary {
+      padding: 9px 22px; border-radius: 10px;
+      background: var(--green); color: #000;
+      font-size: 0.875rem; font-weight: 700;
+      text-decoration: none; cursor: pointer;
+      border: none; transition: all 0.2s;
+      box-shadow: 0 0 20px var(--green-glow);
+    }
+    .btn-primary:hover { background: #4ade80; box-shadow: 0 0 30px rgba(34,197,94,0.25); transform: translateY(-1px); }
+
+    /* ─── HERO ────────────────────────────────── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center;
+      padding: 120px 5% 80px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-glow {
+      position: absolute;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(34,197,94,0.12) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    .hero-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black, transparent);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 16px 6px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(34,197,94,0.3);
+      background: rgba(34,197,94,0.08);
+      font-size: 0.8rem; font-weight: 600; color: var(--green);
+      margin-bottom: 28px;
+      animation: fadeDown 0.6s ease both;
+    }
+    .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes fadeDown { from{opacity:0;transform:translateY(-12px)} to{opacity:1;transform:none} }
+    @keyframes fadeUp   { from{opacity:0;transform:translateY(20px)}  to{opacity:1;transform:none} }
+    @keyframes fadeIn   { from{opacity:0} to{opacity:1} }
+    @keyframes slideLeft{ from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:none} }
+
+    .hero h1 {
+      font-size: clamp(2.8rem, 6vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 28px;
+      animation: fadeUp 0.7s 0.1s ease both;
+    }
+
+    .hero h1 .accent {
+      background: linear-gradient(135deg, var(--green) 0%, #86efac 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      max-width: 600px;
+      font-size: 1.15rem;
+      color: var(--text-dim);
+      line-height: 1.7;
+      margin-bottom: 44px;
+      animation: fadeUp 0.7s 0.2s ease both;
+    }
+
+    .hero-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+      animation: fadeUp 0.7s 0.3s ease both;
+    }
+
+    .btn-hero-primary {
+      padding: 14px 32px; border-radius: 12px;
+      background: var(--green); color: #000;
+      font-size: 1rem; font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 0 30px rgba(34,197,94,0.3);
+      transition: all 0.25s;
+      border: none;
+    }
+    .btn-hero-primary:hover { background: #4ade80; transform: translateY(-2px); box-shadow: 0 0 50px rgba(34,197,94,0.35); }
+
+    .btn-hero-ghost {
+      padding: 14px 32px; border-radius: 12px;
+      border: 1px solid var(--border-hi);
+      background: rgba(255,255,255,0.04);
+      color: var(--text); font-size: 1rem; font-weight: 600;
+      text-decoration: none; transition: all 0.25s;
+    }
+    .btn-hero-ghost:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); }
+
+    /* ─── HERO IMAGE ──────────────────────────── */
+    .hero-visual {
+      margin-top: 70px; width: 100%; max-width: 1000px;
+      position: relative; z-index: 2;
+      animation: fadeUp 0.9s 0.4s ease both;
+    }
+
+    .hero-visual-frame {
+      border-radius: 20px;
+      border: 1px solid var(--border-hi);
+      overflow: hidden;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px var(--border), 0 0 60px rgba(34,197,94,0.08);
+      position: relative;
+    }
+
+    .hero-visual-frame::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 40px;
+      background: var(--bg-2);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      z-index: 3;
+    }
+
+    .browser-dots {
+      position: absolute; top: 13px; left: 18px;
+      display: flex; gap: 7px; z-index: 4;
+    }
+    .browser-dots span {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+    .browser-dots span:nth-child(1){ background: #ff5f57; }
+    .browser-dots span:nth-child(2){ background: #febc2e; }
+    .browser-dots span:nth-child(3){ background: #28c840; }
+
+    .browser-bar {
+      position: absolute; top: 10px; left: 80px; right: 80px;
+      height: 20px; border-radius: 6px;
+      background: rgba(255,255,255,0.06);
+      z-index: 4;
+    }
+
+    .hero-img {
+      width: 100%; display: block;
+      margin-top: 40px;
+    }
+
+    /* ─── STATS STRIP ─────────────────────────── */
+    .stats-strip {
+      padding: 60px 5%;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 40px;
+      background: var(--bg-2);
+    }
+
+    .stat-item { text-align: center; }
+    .stat-num {
+      font-size: 2.6rem; font-weight: 900;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, var(--green) 0%, #86efac 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat-label {
+      font-size: 0.875rem; color: var(--text-dim);
+      margin-top: 6px; font-weight: 500;
+    }
+
+    /* ─── SECTIONS ────────────────────────────── */
+    section { padding: 100px 5%; }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--green);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800; letter-spacing: -1.5px;
+      line-height: 1.1; margin-bottom: 18px;
+    }
+
+    .section-sub {
+      font-size: 1.05rem; color: var(--text-dim);
+      line-height: 1.7; max-width: 520px;
+    }
+
+    /* ─── FEATURES GRID ───────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 60px;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      transition: all 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+      opacity: 0; transition: opacity 0.3s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(34,197,94,0.2);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4), 0 0 30px var(--green-glow);
+    }
+    .feature-card:hover::before { opacity: 1; }
+
+    .feature-icon {
+      width: 52px; height: 52px; border-radius: 14px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; margin-bottom: 22px;
+    }
+
+    .feature-title {
+      font-size: 1.1rem; font-weight: 700; margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .feature-desc {
+      font-size: 0.9rem; color: var(--text-dim); line-height: 1.7;
+    }
+
+    /* ─── USE CASES ───────────────────────────── */
+    .usecase-section {
+      background: var(--bg-2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .usecase-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+      margin-top: 60px;
+    }
+
+    .usecase-visual {
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid var(--border-hi);
+      background: var(--bg-card);
+      box-shadow: 0 30px 70px rgba(0,0,0,0.5);
+    }
+
+    /* ─── MOCK DASHBOARD VISUAL ───────────────── */
+    .mock-dashboard {
+      padding: 24px;
+      font-family: 'Inter', monospace;
+    }
+
+    .mock-topbar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .mock-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .mock-label {
+      font-size: 0.75rem; color: var(--text-mute);
+      margin-left: auto; font-weight: 600; letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .mock-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .mock-table th {
+      padding: 8px 12px; text-align: left; font-weight: 700;
+      color: var(--text-dim); border-bottom: 1px solid var(--border);
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .mock-table td {
+      padding: 10px 12px; color: var(--text); border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .mock-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    .score-pill {
+      display: inline-block; padding: 3px 10px; border-radius: 100px;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .score-high { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .score-mid  { background: rgba(234,179,8,0.15);  color: #facc15; }
+    .score-low  { background: rgba(239,68,68,0.15);  color: #f87171; }
+
+    /* ─── PYQ MOCK ────────────────────────────── */
+    .mock-pyq { padding: 24px; }
+    .pyq-item {
+      padding: 14px 16px; border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .pyq-num {
+      font-size: 0.7rem; font-weight: 800; color: var(--green);
+      width: 24px; height: 24px; border-radius: 6px;
+      background: rgba(34,197,94,0.12); display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .pyq-text { font-size: 0.8rem; color: var(--text-dim); flex: 1; line-height: 1.4; }
+    .pyq-prob {
+      font-size: 0.7rem; font-weight: 700; color: var(--green);
+      white-space: nowrap;
+    }
+
+    .usecase-info { }
+    .usecase-steps { margin-top: 30px; display: flex; flex-direction: column; gap: 20px; }
+    .usecase-step { display: flex; gap: 16px; align-items: flex-start; }
+    .step-num {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+      font-size: 0.85rem; font-weight: 800; color: var(--green);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .step-body h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }
+    .step-body p  { font-size: 0.85rem; color: var(--text-dim); line-height: 1.5; }
+
+    /* ─── ROLES SECTION ───────────────────────── */
+    .roles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 60px;
+    }
+
+    .role-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px;
+      transition: all 0.3s;
+      position: relative; overflow: hidden;
+    }
+
+    .role-card.teacher { border-color: rgba(34,197,94,0.2); }
+    .role-card.student { border-color: rgba(99,102,241,0.2); }
+
+    .role-card.teacher::after {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .role-card.student::after {
+      content: '';
+      position: absolute; bottom: 0; right: 0;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .role-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 14px; border-radius: 100px;
+      font-size: 0.75rem; font-weight: 700;
+      margin-bottom: 20px;
+    }
+    .teacher .role-badge { background: rgba(34,197,94,0.1); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+    .student .role-badge { background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.2); }
+
+    .role-title { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px; }
+    .role-desc  { font-size: 0.9rem; color: var(--text-dim); line-height: 1.7; margin-bottom: 24px; }
+
+    .role-perks { display: flex; flex-direction: column; gap: 10px; }
+    .role-perk  { display: flex; align-items: center; gap: 10px; font-size: 0.875rem; color: var(--text-dim); }
+    .perk-check {
+      width: 18px; height: 18px; border-radius: 6px;
+      background: rgba(34,197,94,0.12); border: 1px solid rgba(34,197,94,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: var(--green); font-size: 0.65rem; flex-shrink: 0;
+    }
+    .student .perk-check {
+      background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.2);
+      color: #818cf8;
+    }
+
+    /* ─── CTA ─────────────────────────────────── */
+    .cta-section {
+      text-align: center;
+      padding: 120px 5%;
+      position: relative; overflow: hidden;
+    }
+
+    .cta-section::before {
+      content: '';
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(34,197,94,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .cta-title {
+      font-size: clamp(2.2rem, 4.5vw, 3.8rem);
+      font-weight: 900; letter-spacing: -2px;
+      line-height: 1.08; margin-bottom: 24px;
+    }
+
+    .cta-sub {
+      font-size: 1.05rem; color: var(--text-dim);
+      max-width: 480px; margin: 0 auto 44px; line-height: 1.7;
+    }
+
+    .cta-actions {
+      display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+    }
+
+    /* ─── FOOTER ──────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 5%;
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 16px;
+    }
+
+    .footer-brand { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.3px; }
+    .footer-copy  { font-size: 0.8rem; color: var(--text-mute); }
+
+    /* ─── SCROLL ANIMATIONS ───────────────────── */
+    .reveal {
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reveal.visible {
+      opacity: 1; transform: none;
+    }
+
+    /* ─── RESPONSIVE ──────────────────────────── */
+    @media (max-width: 768px) {
+      .usecase-grid, .roles-grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+      .usecase-visual { order: -1; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAV ───────────────────────────────────────────── -->
+<nav>
+  <div class="nav-brand">
+    <span class="brand-dot"></span>
+    AcadeX
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#use-cases">Use Cases</a>
+    <a href="#roles">For You</a>
+  </div>
+  <div class="nav-cta">
+    <a href="/login" class="btn-ghost">Sign In</a>
+    <a href="/login" class="btn-primary">Get Started →</a>
+  </div>
+</nav>
+
+
+<!-- ─── HERO ───────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-badge">
+    <span class="dot"></span>
+    Powered by AcadeX
+  </div>
+
+  <h1>
+    The Academic Platform<br>
+    <span class="accent">Built for Intelligence.</span>
+  </h1>
+
+  <p class="hero-sub">
+    AcadeX automates the tedious — scan mark sheets into Excel, surface patterns from past papers,
+    manage student submissions — so teachers and students can focus on what matters.
+  </p>
+
+  <div class="hero-actions">
+    <a href="/login" class="btn-hero-primary" id="cta-main">Start for Free →</a>
+    <a href="#features" class="btn-hero-ghost">Explore Features</a>
+  </div>
+
+  <div class="hero-visual">
+    <div class="hero-visual-frame">
+      <div class="browser-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="browser-bar"></div>
+      <img src="/static/hero.png" alt="AcadeX Dashboard Preview" class="hero-img">
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── STATS ──────────────────────────────────────────── -->
+<div class="stats-strip">
+  <div class="stat-item reveal">
+    <div class="stat-num">📷</div>
+    <div class="stat-label">Scan any mark sheet image</div>
+  </div>
+  <div class="stat-item reveal">
+    <div class="stat-num">📊</div>
+    <div class="stat-label">Instant Excel export</div>
+  </div>
+  <div class="stat-item reveal">
+    <div class="stat-num">📚</div>
+    <div class="stat-label">PYQ pattern analysis</div>
+  </div>
+  <div class="stat-item reveal">
+    <div class="stat-num">📬</div>
+    <div class="stat-label">Student submission tracking</div>
+  </div>
+</div>
+
+
+<!-- ─── FEATURES ───────────────────────────────────────── -->
+<section id="features">
+  <div class="reveal">
+    <span class="section-tag">Capabilities</span>
+    <h2 class="section-title">Everything your institution needs,<br>in one platform.</h2>
+    <p class="section-sub">From scanning a handwritten mark sheet to surfacing patterns in past papers — AcadeX handles the full academic workflow in one place.</p>
+  </div>
+
+  <div class="features-grid">
+    <div class="feature-card reveal">
+      <div class="feature-icon">📷</div>
+      <div class="feature-title">Marks Tabulator</div>
+      <div class="feature-desc">Photograph a handwritten or printed mark sheet. Gemini Vision reads every value and converts it into a structured Excel spreadsheet — no manual typing required.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">🔮</div>
+      <div class="feature-title">PYQ Question Predictor</div>
+      <div class="feature-desc">Upload past question papers for a subject. Gemini cross-references them against your syllabus and surfaces frequently recurring topics and question patterns.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📚</div>
+      <div class="feature-title">Reference Book Library</div>
+      <div class="feature-desc">Curate and share recommended books per semester and subject. Teachers add resources; students access them instantly — organized by curriculum.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📝</div>
+      <div class="feature-title">Mock Test Generator</div>
+      <div class="feature-desc">Students generate 5-question practice exams for any subject on demand. Answer sheets are submitted digitally for teacher review and download.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">📬</div>
+      <div class="feature-title">Submission Management</div>
+      <div class="feature-desc">Teachers see all student answer submissions in one dashboard, with timestamps and one-click download — no more email attachments or lost papers.</div>
+    </div>
+    <div class="feature-card reveal">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Smart OCR with Caching</div>
+      <div class="feature-desc">Processed PDFs are cached intelligently. Re-running analysis on the same papers is near-instant — no wasted API calls, no waiting.</div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── USE CASES ───────────────────────────────────────── -->
+<section id="use-cases" class="usecase-section">
+  <!-- UC1: Marks Tabulator -->
+  <div class="usecase-grid reveal">
+    <div class="usecase-info">
+      <span class="section-tag">Use Case 01</span>
+      <h2 class="section-title">Scan marks.<br>Get Excel. Instantly.</h2>
+      <p class="section-sub">No more manual data entry. Photograph a mark sheet, upload it, and AcadeX builds a clean, downloadable Excel file from it using Gemini's vision model.</p>
+      <div class="usecase-steps">
+        <div class="usecase-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Upload the Mark Sheet Image</h4>
+            <p>JPEG, PNG — any clear photo works. Gemini Vision handles varying image quality.</p>
+          </div>
+        </div>
+        <div class="usecase-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Gemini Extracts the Table</h4>
+            <p>The vision model reads every cell and converts it to structured JSON.</p>
+          </div>
+        </div>
+        <div class="usecase-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Download as Excel</h4>
+            <p>One click. A ready-to-use .xlsx file lands in your downloads.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="usecase-visual">
+      <div class="mock-dashboard">
+        <div class="mock-topbar">
+          <div class="mock-dot" style="background:#22c55e; box-shadow: 0 0 8px #22c55e80;"></div>
+          <div class="mock-label">📋 Marks Tabulator — Extracted Data</div>
+        </div>
+        <table class="mock-table">
+          <thead>
+            <tr>
+              <th>Roll No.</th>
+              <th>Student Name</th>
+              <th>Maths</th>
+              <th>Physics</th>
+              <th>DBMS</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>101</td><td>Aryan Sharma</td><td>88</td><td>92</td><td>95</td><td><span class="score-pill score-high">A+</span></td></tr>
+            <tr><td>102</td><td>Priya Mehta</td><td>74</td><td>81</td><td>79</td><td><span class="score-pill score-mid">B</span></td></tr>
+            <tr><td>103</td><td>Rahul Gupta</td><td>62</td><td>58</td><td>70</td><td><span class="score-pill score-low">C</span></td></tr>
+            <tr><td>104</td><td>Sneha Patel</td><td>91</td><td>89</td><td>93</td><td><span class="score-pill score-high">A+</span></td></tr>
+            <tr><td>105</td><td>Vikram Nair</td><td>77</td><td>83</td><td>80</td><td><span class="score-pill score-mid">B+</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div style="height: 80px;"></div>
+
+  <!-- UC2: PYQ Predictor -->
+  <div class="usecase-grid reveal" style="direction: rtl;">
+    <div class="usecase-info" style="direction: ltr;">
+      <span class="section-tag">Use Case 02</span>
+      <h2 class="section-title">Predict questions<br>before the exam.</h2>
+      <p class="section-sub">Upload previous year papers and your syllabus PDF. Gemini cross-references recurring topics across years and ranks questions by how often they've appeared.</p>
+      <div class="usecase-steps">
+        <div class="usecase-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>Select Semester & Subject</h4>
+            <p>Choose from a curriculum-organized dropdown — papers are pre-loaded by the admin.</p>
+          </div>
+        </div>
+        <div class="usecase-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Upload Your Syllabus</h4>
+            <p>Provide the official syllabus as a PDF or image for context grounding.</p>
+          </div>
+        </div>
+        <div class="usecase-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Get Ranked Predictions</h4>
+            <p>Receive topic-wise predicted questions sorted by confidence and frequency.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="usecase-visual" style="direction: ltr;">
+      <div class="mock-pyq">
+        <div class="mock-topbar">
+          <div class="mock-dot" style="background:#818cf8; box-shadow: 0 0 8px #818cf880;"></div>
+          <div class="mock-label">🔮 PYQ Predictor — DBMS</div>
+        </div>
+        <div class="pyq-item">
+          <div class="pyq-num">1</div>
+          <div class="pyq-text">Explain ACID properties in database transactions with examples.</div>
+          <div class="pyq-prob">92%</div>
+        </div>
+        <div class="pyq-item">
+          <div class="pyq-num">2</div>
+          <div class="pyq-text">Describe normalization up to 3NF with a real-world relation.</div>
+          <div class="pyq-prob">88%</div>
+        </div>
+        <div class="pyq-item">
+          <div class="pyq-num">3</div>
+          <div class="pyq-text">Compare B-tree and B+ tree indexing structures.</div>
+          <div class="pyq-prob">81%</div>
+        </div>
+        <div class="pyq-item">
+          <div class="pyq-num">4</div>
+          <div class="pyq-text">Explain the ER model and convert it to a relational schema.</div>
+          <div class="pyq-prob">76%</div>
+        </div>
+        <div class="pyq-item">
+          <div class="pyq-num">5</div>
+          <div class="pyq-text">Discuss concurrency control using two-phase locking protocol.</div>
+          <div class="pyq-prob">69%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── ROLES ────────────────────────────────────────────── -->
+<section id="roles">
+  <div class="reveal">
+    <span class="section-tag">Built For Everyone</span>
+    <h2 class="section-title">One platform, two views.</h2>
+    <p class="section-sub">AcadeX adapts based on your role — giving teachers powerful admin tools and students everything they need to excel.</p>
+  </div>
+  <div class="roles-grid">
+    <div class="role-card teacher reveal">
+      <div class="role-badge">👩‍🏫 Teacher</div>
+      <div class="role-title">Automate the<br>administrative grind.</div>
+      <div class="role-desc">Free yourself from data entry and paper management. Let automation handle the grunt work while you focus on teaching.</div>
+      <div class="role-perks">
+        <div class="role-perk"><div class="perk-check">✓</div> Scan mark sheets → instant Excel export</div>
+        <div class="role-perk"><div class="perk-check">✓</div> Manage reference book library per subject</div>
+        <div class="role-perk"><div class="perk-check">✓</div> View & download student test submissions</div>
+        <div class="role-perk"><div class="perk-check">✓</div> Upload question papers for pattern analysis</div>
+        <div class="role-perk"><div class="perk-check">✓</div> PYQ syllabus pattern analysis</div>
+      </div>
+    </div>
+    <div class="role-card student reveal">
+      <div class="role-badge" style="background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.2);">👨‍🎓 Student</div>
+      <div class="role-title">Prepare smarter,<br>not harder.</div>
+      <div class="role-desc">Access smart study tools and resources tailored to your semester — and practice with mock exams before the real thing.</div>
+      <div class="role-perks">
+        <div class="role-perk" style="--perk-c:#818cf8"><div class="perk-check">✓</div> Pattern-based exam question suggestions</div>
+        <div class="role-perk"><div class="perk-check">✓</div> On-demand 5-question mock tests</div>
+        <div class="role-perk"><div class="perk-check">✓</div> Access recommended reference books</div>
+        <div class="role-perk"><div class="perk-check">✓</div> Submit answers directly to teachers</div>
+        <div class="role-perk"><div class="perk-check">✓</div> Track study consistency via heatmap</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── CTA ──────────────────────────────────────────────── -->
+<section class="cta-section reveal">
+  <h2 class="cta-title">
+    Ready to modernise<br>your classroom workflow?
+  </h2>
+  <p class="cta-sub">
+    Sign in with your credentials and start automating your academic workflow today. No setup required.
+  </p>
+  <div class="cta-actions">
+    <a href="/login" class="btn-hero-primary" id="cta-bottom">Sign In to AcadeX →</a>
+    <a href="#features" class="btn-hero-ghost">Learn More</a>
+  </div>
+</section>
+
+
+<!-- ─── FOOTER ───────────────────────────────────────────── -->
+<footer>
+  <div class="footer-brand">🌿 AcadeX</div>
+  <div class="footer-copy">© 2026 AcadeX · Smart Academic Management</div>
+</footer>
+
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // Stagger children
+        const children = e.target.querySelectorAll('.reveal');
+        children.forEach((c, i) => setTimeout(() => c.classList.add('visible'), i * 80));
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -60px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Nav scroll effect
+  const nav = document.querySelector('nav');
+  window.addEventListener('scroll', () => {
+    nav.style.borderBottomColor = window.scrollY > 10
+      ? 'rgba(255,255,255,0.1)'
+      : 'rgba(255,255,255,0.07)';
+  });
+</script>
+
+</body>
+</html>

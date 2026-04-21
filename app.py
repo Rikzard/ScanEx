@@ -58,7 +58,9 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 BOOKS_FILE = "data/books.json"
 SUBMISSIONS_FILE = "data/submissions.json"
 SUBMISSIONS_FOLDER = "submissions"
+BOOKS_FOLDER = os.path.join("templates", "static", "books")
 os.makedirs(SUBMISSIONS_FOLDER, exist_ok=True)
+os.makedirs(BOOKS_FOLDER, exist_ok=True)
 
 def load_books():
     if not os.path.exists(BOOKS_FILE):
@@ -81,8 +83,12 @@ def save_submissions(data):
         json.dump(data, f, indent=4)
 
 @app.route("/")
+def landing():
+    return render_template("landing.html")
+
+@app.route("/dashboard")
 @login_required
-def home():
+def dashboard():
     return render_template("index.html", role=session.get("role"))
 
 @app.route("/login", methods=["GET", "POST"])
@@ -95,7 +101,7 @@ def login():
         if user and user["password"] == password:
             session["user"] = username
             session["role"] = user["role"]
-            return redirect(url_for("home"))
+            return redirect(url_for("dashboard"))
         else:
             flash("Invalid credentials. Please try again.", "error")
             
@@ -104,7 +110,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("landing"))
 
 # ==========================================
 # 2. File Ingestion (The Endpoints)
@@ -333,15 +339,22 @@ def add_book():
     if session.get("role") != "teacher":
         return jsonify({"error": "Unauthorized"}), 403
         
-    data = request.json
-    semester = data.get("semester")
-    subject = data.get("subject")
-    title = data.get("title")
-    author = data.get("author")
+    semester = request.form.get("semester")
+    subject = request.form.get("subject")
+    title = request.form.get("title")
+    author = request.form.get("author")
+    book_file = request.files.get("book_file")
     
-    if not all([semester, subject, title, author]):
-        return jsonify({"error": "Missing data"}), 400
+    if not all([semester, subject, title, author, book_file]):
+        return jsonify({"error": "Missing data or file"}), 400
         
+    # Save the file
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    safe_title = re.sub(r'[^a-zA-Z0-9]', '_', title)
+    filename = f"{safe_title}_{timestamp}.pdf"
+    filepath = os.path.join(BOOKS_FOLDER, filename)
+    book_file.save(filepath)
+    
     books = load_books()
     if semester not in books:
         books[semester] = {}
@@ -351,7 +364,7 @@ def add_book():
     books[semester][subject].append({
         "title": title, 
         "author": author,
-        "url": "/static/sample_book.pdf"
+        "url": f"/static/books/{filename}"
     })
     save_books(books)
     
@@ -371,11 +384,19 @@ def delete_book():
     books = load_books()
     try:
         if semester in books and subject in books[semester]:
+            # Get the file path to delete it physically
+            book_to_delete = books[semester][subject][int(index)]
+            rel_url = book_to_delete.get("url")
+            if rel_url and rel_url.startswith("/static/books/"):
+                file_path = os.path.join("templates", "static", "books", os.path.basename(rel_url))
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+
             books[semester][subject].pop(int(index))
             save_books(books)
             return jsonify({"success": True})
-    except (IndexError, ValueError):
-        pass
+    except (IndexError, ValueError, Exception) as e:
+        print(f"Delete book error: {e}")
         
     return jsonify({"error": "Failed to delete"}), 400
 
